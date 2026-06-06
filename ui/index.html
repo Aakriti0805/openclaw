@@ -4,6 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>OpenClaw Control</title>
+    <meta
+      name="description"
+      content="OpenClaw Control — manage agents, sessions, and gateway settings from your browser."
+    />
     <meta name="color-scheme" content="dark light" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
@@ -63,244 +67,793 @@
       })();
     </script>
     <style>
-      body.openclaw-mount-fallback-active {
-        margin: 0;
-        min-width: 320px;
-        color: #eef4f8;
-        background: #101418;
-        font-family:
-          Inter,
-          ui-sans-serif,
-          system-ui,
-          -apple-system,
-          BlinkMacSystemFont,
-          "Segoe UI",
-          sans-serif;
+      :root {
+        --oc-font:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --oc-accent: #66c2ff;
+        --oc-accent-soft: #8bd3ff;
+        --oc-accent-glow: rgba(102, 194, 255, 0.35);
+        --oc-bg: #0c1014;
+        --oc-bg-elevated: #151b21;
+        --oc-text: #eef4f8;
+        --oc-text-muted: #9fb0bd;
+        --oc-text-secondary: #c8d3da;
+        --oc-border: rgba(148, 163, 184, 0.28);
+        --oc-shadow: 0 28px 90px rgba(0, 0, 0, 0.42);
+        --oc-focus: #f9c74f;
+        --oc-link: #8bd3ff;
+        --oc-success: #4ade80;
+        --oc-warning: #fbbf24;
+        --oc-danger: #f87171;
+        --oc-radius: 12px;
+        --oc-radius-sm: 8px;
+        --oc-ease: cubic-bezier(0.22, 1, 0.36, 1);
       }
 
-      body.openclaw-mount-fallback-active openclaw-app {
+      html[data-theme-mode="light"] {
+        --oc-accent: #0284c7;
+        --oc-accent-soft: #0369a1;
+        --oc-accent-glow: rgba(2, 132, 199, 0.18);
+        --oc-bg: #eef2f6;
+        --oc-bg-elevated: #ffffff;
+        --oc-text: #151b21;
+        --oc-text-muted: #64748b;
+        --oc-text-secondary: #475569;
+        --oc-border: rgba(71, 85, 105, 0.2);
+        --oc-shadow: 0 28px 90px rgba(15, 23, 42, 0.12);
+        --oc-link: #0369a1;
+      }
+
+      html[data-theme="openknot"],
+      html[data-theme="openknot-light"] {
+        --oc-accent: #a78bfa;
+        --oc-accent-soft: #c4b5fd;
+        --oc-accent-glow: rgba(167, 139, 250, 0.32);
+        --oc-link: #c4b5fd;
+      }
+
+      html[data-theme="openknot-light"] {
+        --oc-accent: #7c3aed;
+        --oc-accent-soft: #6d28d9;
+        --oc-link: #6d28d9;
+      }
+
+      html[data-theme="dash"],
+      html[data-theme="dash-light"] {
+        --oc-accent: #34d399;
+        --oc-accent-soft: #6ee7b7;
+        --oc-accent-glow: rgba(52, 211, 153, 0.28);
+        --oc-link: #6ee7b7;
+      }
+
+      html[data-theme="dash-light"] {
+        --oc-accent: #059669;
+        --oc-accent-soft: #047857;
+        --oc-link: #047857;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100%;
+        color: var(--oc-text);
+        background: var(--oc-bg);
+        font-family: var(--oc-font);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      body.openclaw-shell-active {
+        overflow: hidden;
+      }
+
+      body.openclaw-shell-active openclaw-app {
         display: none;
       }
 
-      .mount-fallback {
-        box-sizing: border-box;
-        min-height: 100vh;
-        padding: 24px;
-        place-items: center;
-      }
-
-      .mount-fallback:not([hidden]) {
+      /* Ambient backdrop */
+      .openclaw-shell {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
         display: grid;
+        place-items: center;
+        padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right))
+          max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+        background:
+          radial-gradient(ellipse 80% 60% at 15% 10%, var(--oc-accent-glow), transparent 55%),
+          radial-gradient(ellipse 70% 55% at 85% 90%, rgba(148, 163, 184, 0.08), transparent 50%),
+          var(--oc-bg);
+        transition: opacity 0.45s var(--oc-ease), visibility 0.45s;
       }
 
-      .mount-fallback__panel {
-        box-sizing: border-box;
-        width: min(100%, 640px);
-        border: 1px solid rgba(148, 163, 184, 0.28);
-        border-radius: 8px;
-        background: #151b21;
-        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.36);
-        padding: 28px;
+      .openclaw-shell[hidden] {
+        display: none !important;
       }
 
-      .mount-fallback__eyebrow {
-        margin: 0 0 10px;
-        color: #9fb0bd;
-        font-size: 0.78rem;
+      .openclaw-shell.is-exiting {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .openclaw-shell__grid {
+        position: absolute;
+        inset: 0;
+        opacity: 0.045;
+        background-image:
+          linear-gradient(var(--oc-border) 1px, transparent 1px),
+          linear-gradient(90deg, var(--oc-border) 1px, transparent 1px);
+        background-size: 48px 48px;
+        mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black, transparent);
+        pointer-events: none;
+      }
+
+      html[data-theme-mode="light"] .openclaw-shell__grid {
+        opacity: 0.06;
+      }
+
+      .openclaw-shell__card {
+        position: relative;
+        width: min(100%, 520px);
+        border: 1px solid var(--oc-border);
+        border-radius: var(--oc-radius);
+        background: color-mix(in srgb, var(--oc-bg-elevated) 92%, transparent);
+        backdrop-filter: blur(18px);
+        box-shadow: var(--oc-shadow);
+        padding: clamp(24px, 4vw, 36px);
+        animation: oc-rise 0.55s var(--oc-ease) both;
+      }
+
+      @keyframes oc-rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.985);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .openclaw-shell__card,
+        .oc-loader__ring,
+        .oc-loader__dot,
+        .oc-progress__fill {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+
+      .openclaw-shell__brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 22px;
+      }
+
+      .openclaw-shell__mark {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        border-radius: 11px;
+        display: grid;
+        place-items: center;
+        color: #061019;
+        background: linear-gradient(145deg, var(--oc-accent-soft), var(--oc-accent));
+        box-shadow: 0 10px 28px var(--oc-accent-glow);
+      }
+
+      html[data-theme-mode="light"] .openclaw-shell__mark {
+        color: #fff;
+      }
+
+      .openclaw-shell__mark svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      .openclaw-shell__eyebrow {
+        margin: 0;
+        color: var(--oc-text-muted);
+        font-size: 0.72rem;
         font-weight: 700;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
       }
 
-      .mount-fallback__panel h1 {
+      .openclaw-shell__title {
+        margin: 4px 0 0;
+        font-size: clamp(1.35rem, 3vw, 1.75rem);
+        line-height: 1.2;
+        letter-spacing: -0.02em;
+      }
+
+      .openclaw-shell__subtitle {
+        margin: 10px 0 0;
+        color: var(--oc-text-secondary);
+        font-size: 0.98rem;
+        line-height: 1.55;
+      }
+
+      /* Boot loader */
+      .oc-loader {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-top: 28px;
+        padding: 16px 18px;
+        border: 1px solid var(--oc-border);
+        border-radius: var(--oc-radius-sm);
+        background: color-mix(in srgb, var(--oc-bg) 55%, transparent);
+      }
+
+      .oc-loader__ring {
+        flex-shrink: 0;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        border: 3px solid color-mix(in srgb, var(--oc-accent) 22%, transparent);
+        border-top-color: var(--oc-accent);
+        animation: oc-spin 0.85s linear infinite;
+      }
+
+      @keyframes oc-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .oc-loader__body {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .oc-loader__status {
         margin: 0;
-        color: inherit;
-        font-size: clamp(1.5rem, 3vw, 2rem);
-        line-height: 1.15;
+        font-size: 0.95rem;
+        font-weight: 600;
       }
 
-      .mount-fallback__panel p {
-        margin: 16px 0 0;
-        color: #c8d3da;
-        font-size: 1rem;
-        line-height: 1.6;
+      .oc-loader__hint {
+        margin: 4px 0 0;
+        color: var(--oc-text-muted);
+        font-size: 0.84rem;
+        line-height: 1.45;
       }
 
-      .mount-fallback__panel ul {
-        margin: 18px 0 0;
-        padding-left: 1.2rem;
-        color: #c8d3da;
-        line-height: 1.6;
+      .oc-progress {
+        margin-top: 14px;
+        height: 4px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--oc-border) 80%, transparent);
+        overflow: hidden;
       }
 
-      .mount-fallback__panel a {
-        color: #8bd3ff;
-        text-decoration-thickness: 0.08em;
+      .oc-progress__fill {
+        display: block;
+        height: 100%;
+        width: 0%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, var(--oc-accent), var(--oc-accent-soft));
+        transition: width 0.25s linear;
+      }
+
+      /* Error state */
+      .oc-error[hidden],
+      .oc-loader[hidden],
+      .oc-steps[hidden],
+      .oc-diagnostics[hidden] {
+        display: none !important;
+      }
+
+      .oc-error {
+        margin-top: 22px;
+        padding: 14px 16px;
+        border-radius: var(--oc-radius-sm);
+        border: 1px solid color-mix(in srgb, var(--oc-danger) 45%, transparent);
+        background: color-mix(in srgb, var(--oc-danger) 12%, transparent);
+        color: var(--oc-text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.5;
+      }
+
+      .oc-error strong {
+        color: var(--oc-text);
+      }
+
+      .oc-steps {
+        margin: 22px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 10px;
+      }
+
+      .oc-steps li {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid var(--oc-border);
+        border-radius: var(--oc-radius-sm);
+        background: color-mix(in srgb, var(--oc-bg) 40%, transparent);
+        color: var(--oc-text-secondary);
+        font-size: 0.92rem;
+        line-height: 1.5;
+      }
+
+      .oc-steps__icon {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        margin-top: 1px;
+        border-radius: 7px;
+        display: grid;
+        place-items: center;
+        color: var(--oc-accent);
+        background: color-mix(in srgb, var(--oc-accent) 14%, transparent);
+      }
+
+      .oc-steps__icon svg {
+        width: 15px;
+        height: 15px;
+      }
+
+      .oc-steps a {
+        color: var(--oc-link);
         text-underline-offset: 0.18em;
       }
 
-      .mount-fallback__actions {
+      .oc-actions {
         display: flex;
         flex-wrap: wrap;
         gap: 10px;
         margin-top: 24px;
       }
 
-      .mount-fallback__button {
-        min-height: 42px;
-        border: 1px solid rgba(148, 163, 184, 0.36);
-        border-radius: 6px;
-        padding: 0 16px;
+      .oc-btn {
+        min-height: 44px;
+        border: 1px solid var(--oc-border);
+        border-radius: var(--oc-radius-sm);
+        padding: 0 18px;
         color: inherit;
         background: transparent;
         font: inherit;
+        font-size: 0.92rem;
         font-weight: 700;
         cursor: pointer;
+        transition:
+          transform 0.15s var(--oc-ease),
+          border-color 0.15s,
+          background 0.15s;
       }
 
-      .mount-fallback__button--primary {
-        border-color: #66c2ff;
+      .oc-btn:hover {
+        border-color: color-mix(in srgb, var(--oc-accent) 55%, var(--oc-border));
+        background: color-mix(in srgb, var(--oc-accent) 8%, transparent);
+      }
+
+      .oc-btn:active {
+        transform: scale(0.98);
+      }
+
+      .oc-btn--primary {
+        border-color: var(--oc-accent);
         color: #061019;
-        background: #8bd3ff;
+        background: linear-gradient(180deg, var(--oc-accent-soft), var(--oc-accent));
       }
 
-      .mount-fallback__panel:focus {
-        outline: none;
+      html[data-theme-mode="light"] .oc-btn--primary {
+        color: #fff;
       }
 
-      .mount-fallback__button:focus-visible,
-      .mount-fallback__panel a:focus-visible {
-        outline: 3px solid #f9c74f;
+      .oc-btn--primary:hover {
+        filter: brightness(1.05);
+        background: linear-gradient(180deg, var(--oc-accent-soft), var(--oc-accent));
+      }
+
+      .oc-btn:focus-visible,
+      .openclaw-shell__card a:focus-visible,
+      .oc-diagnostics summary:focus-visible {
+        outline: 3px solid var(--oc-focus);
         outline-offset: 3px;
       }
 
-      html[data-theme-mode="light"] body.openclaw-mount-fallback-active {
-        color: #151b21;
-        background: #f5f7fa;
+      .oc-diagnostics {
+        margin-top: 20px;
+        border: 1px solid var(--oc-border);
+        border-radius: var(--oc-radius-sm);
+        overflow: hidden;
       }
 
-      html[data-theme-mode="light"] .mount-fallback__panel {
-        border-color: rgba(71, 85, 105, 0.22);
-        background: #ffffff;
-        box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
+      .oc-diagnostics summary {
+        cursor: pointer;
+        padding: 12px 14px;
+        color: var(--oc-text-muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        list-style: none;
+        user-select: none;
       }
 
-      html[data-theme-mode="light"] .mount-fallback__eyebrow,
-      html[data-theme-mode="light"] .mount-fallback__panel p,
-      html[data-theme-mode="light"] .mount-fallback__panel ul {
-        color: #4b5963;
+      .oc-diagnostics summary::-webkit-details-marker {
+        display: none;
       }
 
-      html[data-theme-mode="light"] .mount-fallback__panel a {
-        color: #0369a1;
+      .oc-diagnostics summary::after {
+        content: "▾";
+        float: right;
+        opacity: 0.6;
+      }
+
+      .oc-diagnostics[open] summary::after {
+        transform: rotate(180deg);
+      }
+
+      .oc-diagnostics__body {
+        padding: 0 14px 14px;
+      }
+
+      .oc-diagnostics pre {
+        margin: 0;
+        padding: 12px;
+        border-radius: 6px;
+        background: color-mix(in srgb, var(--oc-bg) 70%, transparent);
+        color: var(--oc-text-secondary);
+        font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+        font-size: 0.75rem;
+        line-height: 1.55;
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 160px;
+        overflow: auto;
+      }
+
+      .openclaw-shell__card:focus {
+        outline: none;
+      }
+
+      code {
+        font-family: ui-monospace, "Cascadia Code", "Segoe UI Mono", monospace;
+        font-size: 0.88em;
+        padding: 0.12em 0.38em;
+        border-radius: 4px;
+        background: color-mix(in srgb, var(--oc-border) 50%, transparent);
       }
     </style>
   </head>
   <body>
     <openclaw-app></openclaw-app>
-    <section
-      id="openclaw-mount-fallback"
-      class="mount-fallback"
-      data-openclaw-mount-timeout-ms="12000"
-      role="alert"
-      aria-labelledby="openclaw-mount-fallback-title"
-      hidden
+
+    <div
+      id="openclaw-shell"
+      class="openclaw-shell"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-labelledby="openclaw-shell-title"
     >
-      <div class="mount-fallback__panel" tabindex="-1">
-        <p class="mount-fallback__eyebrow">OpenClaw Control UI</p>
-        <h1 id="openclaw-mount-fallback-title">Control UI did not start</h1>
-        <p>
-          The browser loaded the static page, but the app bundle did not register the
-          <code>openclaw-app</code> web component. A browser extension or early content script may
-          be blocking module execution.
+      <div class="openclaw-shell__grid" aria-hidden="true"></div>
+
+      <div class="openclaw-shell__card" tabindex="-1">
+        <div class="openclaw-shell__brand">
+          <div class="openclaw-shell__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path
+                d="M7 18c-1.5-2.5-2-5-2-7.5C5 6.5 8 4 12 4s7 2.5 7 6.5c0 2.5-.5 5-2 7.5"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M9 14c.8 1.2 1.9 2 3 2s2.2-.8 3-2"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <circle cx="9" cy="10" r="1" fill="currentColor" />
+              <circle cx="15" cy="10" r="1" fill="currentColor" />
+            </svg>
+          </div>
+          <div>
+            <p class="openclaw-shell__eyebrow">OpenClaw Control</p>
+            <h1 id="openclaw-shell-title" class="openclaw-shell__title">Starting dashboard</h1>
+          </div>
+        </div>
+
+        <p id="openclaw-shell-subtitle" class="openclaw-shell__subtitle">
+          Loading the control UI module. This usually takes a few seconds.
         </p>
-        <ul>
-          <li>Try again in a clean browser profile or private window.</li>
-          <li>Disable extensions that run on all pages, then reload this dashboard.</li>
+
+        <div id="openclaw-loader" class="oc-loader">
+          <div class="oc-loader__ring" aria-hidden="true"></div>
+          <div class="oc-loader__body">
+            <p id="openclaw-loader-status" class="oc-loader__status">Initializing…</p>
+            <p id="openclaw-loader-hint" class="oc-loader__hint">
+              Waiting for the <code>openclaw-app</code> web component.
+            </p>
+            <div class="oc-progress" aria-hidden="true">
+              <span id="openclaw-progress" class="oc-progress__fill"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="openclaw-error" class="oc-error" hidden role="alert">
+          <strong>Module did not register.</strong>
+          The page loaded, but the app bundle never defined
+          <code>openclaw-app</code>. A browser extension or content blocker may be interfering.
+        </div>
+
+        <ul id="openclaw-steps" class="oc-steps" hidden>
           <li>
-            See
-            <a
-              href="https://docs.openclaw.ai/web/control-ui#blank-control-ui-page"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Control UI troubleshooting</a
-            >.
+            <span class="oc-steps__icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 2v4M8 10v4M2 8h4M10 8h4"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+            </span>
+            <span>Open this page in a private window or a clean browser profile.</span>
+          </li>
+          <li>
+            <span class="oc-steps__icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M3 8l3 3 7-7"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+            </span>
+            <span>Disable extensions that inject scripts on every site, then reload.</span>
+          </li>
+          <li>
+            <span class="oc-steps__icon" aria-hidden="true">
+              <svg viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M8 2a6 6 0 100 12A6 6 0 008 2z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path d="M8 5v4M8 11h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+              </svg>
+            </span>
+            <span>
+              See
+              <a
+                href="https://docs.openclaw.ai/web/control-ui#blank-control-ui-page"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Control UI troubleshooting</a
+              >
+              for gateway and build checks.
+            </span>
           </li>
         </ul>
-        <div class="mount-fallback__actions">
-          <button
-            type="button"
-            id="openclaw-mount-retry"
-            class="mount-fallback__button mount-fallback__button--primary"
-          >
-            Try again
-          </button>
-          <button type="button" id="openclaw-mount-wait" class="mount-fallback__button">
-            Keep waiting
-          </button>
+
+        <details id="openclaw-diagnostics" class="oc-diagnostics" hidden>
+          <summary>Diagnostic details</summary>
+          <div class="oc-diagnostics__body">
+            <pre id="openclaw-diagnostics-text"></pre>
+          </div>
+        </details>
+
+        <div id="openclaw-actions" class="oc-actions" hidden>
+          <button type="button" id="openclaw-retry" class="oc-btn oc-btn--primary">Reload page</button>
+          <button type="button" id="openclaw-wait" class="oc-btn">Keep waiting</button>
+          <button type="button" id="openclaw-copy" class="oc-btn">Copy report</button>
         </div>
       </div>
-    </section>
+    </div>
+
     <script>
       (function () {
-        var tagName = "openclaw-app";
-        var app = document.querySelector(tagName);
-        var fallback = document.getElementById("openclaw-mount-fallback");
-        if (!app || !fallback) return;
+        var TAG = "openclaw-app";
+        var app = document.querySelector(TAG);
+        var shell = document.getElementById("openclaw-shell");
+        if (!app || !shell) return;
 
-        var panel = fallback.querySelector(".mount-fallback__panel");
-        var retry = document.getElementById("openclaw-mount-retry");
-        var wait = document.getElementById("openclaw-mount-wait");
-        var rawDelay = Number(fallback.getAttribute("data-openclaw-mount-timeout-ms"));
+        var card = shell.querySelector(".openclaw-shell__card");
+        var title = document.getElementById("openclaw-shell-title");
+        var subtitle = document.getElementById("openclaw-shell-subtitle");
+        var loader = document.getElementById("openclaw-loader");
+        var loaderStatus = document.getElementById("openclaw-loader-status");
+        var loaderHint = document.getElementById("openclaw-loader-hint");
+        var progress = document.getElementById("openclaw-progress");
+        var errorBox = document.getElementById("openclaw-error");
+        var steps = document.getElementById("openclaw-steps");
+        var diagnostics = document.getElementById("openclaw-diagnostics");
+        var diagnosticsText = document.getElementById("openclaw-diagnostics-text");
+        var actions = document.getElementById("openclaw-actions");
+        var retry = document.getElementById("openclaw-retry");
+        var wait = document.getElementById("openclaw-wait");
+        var copyBtn = document.getElementById("openclaw-copy");
+
+        var rawDelay = Number(shell.getAttribute("data-openclaw-mount-timeout-ms"));
         var delay = Number.isFinite(rawDelay) && rawDelay > 0 ? rawDelay : 12000;
+        shell.setAttribute("data-openclaw-mount-timeout-ms", String(delay));
+
+        var bootErrors = [];
         var timer;
+        var tickTimer;
+        var startedAt = Date.now();
+        var phase = "boot";
 
         function appMounted() {
           try {
             return Boolean(
               app.isConnected &&
-              window.customElements &&
-              typeof window.customElements.get === "function" &&
-              window.customElements.get(tagName),
+                window.customElements &&
+                typeof window.customElements.get === "function" &&
+                window.customElements.get(TAG),
             );
           } catch (e) {
             return false;
           }
         }
 
-        function hideFallback() {
-          fallback.hidden = true;
-          document.body.classList.remove("openclaw-mount-fallback-active");
+        function setProgress(ratio) {
+          if (!progress) return;
+          var pct = Math.max(0, Math.min(100, ratio * 100));
+          progress.style.width = pct + "%";
         }
 
-        function showFallback() {
+        function buildReport() {
+          var lines = [
+            "OpenClaw Control — mount diagnostic",
+            "time: " + new Date().toISOString(),
+            "url: " + location.href,
+            "phase: " + phase,
+            "elapsedMs: " + (Date.now() - startedAt),
+            "customElements: " + Boolean(window.customElements),
+            "componentRegistered: " + Boolean(
+              window.customElements && window.customElements.get && window.customElements.get(TAG),
+            ),
+            "theme: " + (document.documentElement.getAttribute("data-theme") || "unknown"),
+            "userAgent: " + navigator.userAgent,
+          ];
+          if (bootErrors.length) {
+            lines.push("errors:");
+            for (var i = 0; i < bootErrors.length; i++) lines.push("  - " + bootErrors[i]);
+          }
+          return lines.join("\n");
+        }
+
+        function refreshDiagnostics() {
+          if (diagnosticsText) diagnosticsText.textContent = buildReport();
+        }
+
+        function showShell() {
+          shell.hidden = false;
+          document.body.classList.add("openclaw-shell-active");
+        }
+
+        function dismissShell() {
+          shell.classList.add("is-exiting");
+          shell.setAttribute("aria-busy", "false");
+          window.setTimeout(function () {
+            shell.hidden = true;
+            document.body.classList.remove("openclaw-shell-active");
+          }, 420);
+        }
+
+        function showFailure() {
           if (appMounted()) return;
-          fallback.hidden = false;
-          document.body.classList.add("openclaw-mount-fallback-active");
-          if (panel && typeof panel.focus === "function") {
+          phase = "failed";
+          showShell();
+
+          if (title) title.textContent = "Control UI did not start";
+          if (subtitle)
+            subtitle.textContent =
+              "The static shell loaded, but the application module never mounted.";
+          if (loader) loader.hidden = true;
+          if (errorBox) errorBox.hidden = false;
+          if (steps) steps.hidden = false;
+          if (diagnostics) diagnostics.hidden = false;
+          if (actions) actions.hidden = false;
+          if (loaderStatus) loaderStatus.textContent = "Failed to mount";
+          shell.setAttribute("aria-busy", "false");
+
+          refreshDiagnostics();
+
+          if (card && typeof card.focus === "function") {
             try {
-              panel.focus({ preventScroll: true });
+              card.focus({ preventScroll: true });
             } catch (e) {
-              panel.focus();
+              card.focus();
             }
           }
         }
 
-        function armFallbackTimer() {
+        function armTimers() {
+          startedAt = Date.now();
+          phase = "boot";
           window.clearTimeout(timer);
-          timer = window.setTimeout(showFallback, delay);
+          window.clearInterval(tickTimer);
+
+          if (loader) loader.hidden = false;
+          if (errorBox) errorBox.hidden = true;
+          if (steps) steps.hidden = true;
+          if (diagnostics) diagnostics.hidden = true;
+          if (actions) actions.hidden = true;
+          if (title) title.textContent = "Starting dashboard";
+          if (subtitle)
+            subtitle.textContent = "Loading the control UI module. This usually takes a few seconds.";
+          if (loaderStatus) loaderStatus.textContent = "Initializing…";
+          if (loaderHint)
+            loaderHint.innerHTML = 'Waiting for the <code>openclaw-app</code> web component.';
+          shell.setAttribute("aria-busy", "true");
+
+          showShell();
+          setProgress(0);
+
+          tickTimer = window.setInterval(function () {
+            var elapsed = Date.now() - startedAt;
+            setProgress(elapsed / delay);
+            if (elapsed > delay * 0.65 && phase === "boot") {
+              phase = "waiting";
+              if (loaderStatus) loaderStatus.textContent = "Still loading…";
+              if (loaderHint)
+                loaderHint.textContent = "Taking longer than usual. You can keep waiting or retry.";
+            }
+          }, 120);
+
+          timer = window.setTimeout(function () {
+            window.clearInterval(tickTimer);
+            setProgress(1);
+            showFailure();
+          }, delay);
         }
 
-        armFallbackTimer();
+        function onMounted() {
+          window.clearTimeout(timer);
+          window.clearInterval(tickTimer);
+          dismissShell();
+        }
+
+        window.addEventListener(
+          "error",
+          function (ev) {
+            var msg =
+              (ev.message || "Unknown error") +
+              (ev.filename ? " @ " + ev.filename + ":" + (ev.lineno || "?") : "");
+            bootErrors.push(msg);
+            if (phase === "failed") refreshDiagnostics();
+          },
+          true,
+        );
+
+        window.addEventListener("unhandledrejection", function (ev) {
+          var reason = ev.reason;
+          bootErrors.push(
+            reason && reason.message ? reason.message : String(reason || "Unhandled rejection"),
+          );
+          if (phase === "failed") refreshDiagnostics();
+        });
+
+        armTimers();
 
         if (window.customElements && typeof window.customElements.whenDefined === "function") {
-          window.customElements.whenDefined(tagName).then(
-            function () {
-              window.clearTimeout(timer);
-              hideFallback();
-            },
-            function () {},
-          );
+          window.customElements.whenDefined(TAG).then(onMounted, function () {});
         }
 
         if (retry) {
@@ -308,10 +861,45 @@
             window.location.reload();
           });
         }
+
         if (wait) {
           wait.addEventListener("click", function () {
-            hideFallback();
-            armFallbackTimer();
+            armTimers();
+          });
+        }
+
+        if (copyBtn) {
+          copyBtn.addEventListener("click", function () {
+            var text = buildReport();
+            function done(ok) {
+              if (!ok) return;
+              var prev = copyBtn.textContent;
+              copyBtn.textContent = "Copied!";
+              window.setTimeout(function () {
+                copyBtn.textContent = prev;
+              }, 1800);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(text).then(function () {
+                done(true);
+              }, function () {
+                done(false);
+              });
+            } else {
+              try {
+                var ta = document.createElement("textarea");
+                ta.value = text;
+                ta.setAttribute("readonly", "");
+                ta.style.position = "fixed";
+                ta.style.left = "-9999px";
+                document.body.appendChild(ta);
+                ta.select();
+                done(document.execCommand("copy"));
+                document.body.removeChild(ta);
+              } catch (e) {
+                done(false);
+              }
+            }
           });
         }
       })();
